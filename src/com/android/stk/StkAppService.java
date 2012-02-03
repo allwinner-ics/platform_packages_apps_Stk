@@ -648,13 +648,16 @@ public class StkAppService extends Service implements Runnable {
         if (settings == null) {
             return;
         }
+        // Set browser launch mode
+        Intent intent = new Intent();
+        intent.setClassName("com.android.browser",
+                "com.android.browser.BrowserActivity");
 
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-
-        Uri data;
+        // to launch home page, make sure that data Uri is null.
+        Uri data = null;
         if (settings.url != null) {
             CatLog.d(this, "settings.url = " + settings.url);
-            if (settings.url.startsWith("http://")) {
+            if ((settings.url.startsWith("http://") || (settings.url.startsWith("https://")))) {
                 data = Uri.parse(settings.url);
             } else {
                 String modifiedUrl = "http://" + settings.url;
@@ -672,13 +675,14 @@ public class StkAppService extends Service implements Runnable {
             data = Uri.parse("http://google.com/");
         }
         intent.setData(data);
-
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         switch (settings.mode) {
         case USE_EXISTING_BROWSER:
+            intent.setAction(Intent.ACTION_VIEW);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             break;
         case LAUNCH_NEW_BROWSER:
+            intent.setAction(Intent.ACTION_VIEW);
             intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
             break;
         case LAUNCH_IF_NOT_ALREADY_LAUNCHED:
@@ -710,8 +714,10 @@ public class StkAppService extends Service implements Runnable {
 
     private void launchIdleText() {
         TextMessage msg = mCurrentCmd.geTextMessage();
+
         if (msg == null) {
-            CatLog.d(this, "mCurrentCmd.getTextMessage is NULL");
+            CatLog.d(this, "mCurrent.getTextMessage is NULL");
+            mNotificationManager.cancel(STK_NOTIFICATION_ID);
             return;
         }
         if (msg.text == null) {
